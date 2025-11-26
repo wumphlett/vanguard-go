@@ -462,13 +462,7 @@ func (o *operation) validate(transcoder *Transcoder) error {
 		o.request.Proto, o.request.ProtoMajor, o.request.ProtoMinor = "HTTP/2", 2, 0
 	}
 
-	if o.server.protocol.protocol() == ProtocolREST {
-		// REST always defaults to JSON.
-		// This is fine to set even if a custom content-type is used via
-		// the use of google.api.HttpBody. The actual content-type and body
-		// data will be written via serverBodyPreparer implementation.
-		o.server.codec = transcoder.codecs.get(CodecJSON, o.methodConf.resolver)
-	} else if _, supportsCodec := o.methodConf.codecNames[reqMeta.codec]; supportsCodec {
+	if _, supportsCodec := o.methodConf.codecNames[reqMeta.codec]; supportsCodec {
 		o.server.codec = o.client.codec
 	} else {
 		o.server.codec = transcoder.codecs.get(o.methodConf.preferredCodec, o.methodConf.resolver)

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -77,15 +78,18 @@ func (r restClientProtocol) extractProtocolRequestHeaders(op *operation, headers
 	reqMeta.acceptCompression = parseMultiHeader(headers.Values("Accept-Encoding"))
 	headers.Del("Accept-Encoding")
 
-	reqMeta.codec = CodecJSON // if actually a custom content-type, handled by body preparer methods
+	reqMeta.codec = CodecJSON // default for REST
 	contentType := headers.Get("Content-Type")
-	if contentType != "" &&
-		contentType != "application/json" &&
-		contentType != "application/json; charset=utf-8" &&
-		!restHTTPBodyRequest(op) {
-		// invalid content-type
-		reqMeta.codec = contentType + "?"
+	if contentType != "" {
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if err != nil {
+			return requestMeta{}, err
+		}
+
+		subType := strings.TrimPrefix(mediaType, "application/")
+		reqMeta.codec = subType
 	}
+
 	headers.Del("Content-Type")
 
 	if timeoutStr := headers.Get("X-Server-Timeout"); timeoutStr != "" {
@@ -101,8 +105,6 @@ func (r restClientProtocol) extractProtocolRequestHeaders(op *operation, headers
 
 func (r restClientProtocol) addProtocolResponseHeaders(meta responseMeta, headers http.Header) int {
 	isErr := meta.end != nil && meta.end.err != nil
-	// Only JSON is supported for now unless using google.api.HttpBody
-	// payloads which override the content-type.
 	if headers["Content-Type"] == nil {
 		headers["Content-Type"] = []string{contentRestPrefix + meta.codec}
 	}
