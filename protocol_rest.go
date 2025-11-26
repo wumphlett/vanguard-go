@@ -80,7 +80,7 @@ func (r restClientProtocol) extractProtocolRequestHeaders(op *operation, headers
 
 	reqMeta.codec = CodecJSON // default for REST
 	contentType := headers.Get("Content-Type")
-	if contentType != "" {
+	if contentType != "" && !restHTTPBodyRequest(op) {
 		mediaType, _, err := mime.ParseMediaType(contentType)
 		if err != nil {
 			return requestMeta{}, err

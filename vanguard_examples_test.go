@@ -132,8 +132,9 @@ func Example_rpcClientToRestServer() {
 	services := []*vanguard.Service{vanguard.NewService(
 		testv1connect.LibraryServiceName,
 		restHandler,
-		// This tells vanguard that the service implementation only supports REST.
+		// This tells vanguard that the service implementation only supports REST with JSON.
 		vanguard.WithTargetProtocols(vanguard.ProtocolREST),
+		vanguard.WithTargetCodecs(vanguard.CodecJSON),
 	)}
 	transcoder, err := vanguard.NewTranscoder(services)
 	if err != nil {
